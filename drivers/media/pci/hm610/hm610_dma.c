@@ -123,12 +123,45 @@ static void replace_tasklet_schedule(struct hm610_dev *dev)
 
 	data = adapter->dma.buf[k];
 
+/*	for(i = 0; i < TS_NUM; i++) {
+		//tid = data[0]&0x07;
+		tid = data[0];
+		if(tid <= 7){
+			data[0] = 0x47;	
+			dvb_dmx_swfilter_packets(&(dev->adapter[tid].demux), data, 1);
+			data =  data + 192;
+		}
+	}*/
+	
 	for(i = 0; i < TS_NUM; i++) {
-		tid = data[0]&0x07;	
-		data[0] = 0x47;	
-		dvb_dmx_swfilter_packets(&(dev->adapter[tid].demux), data, 1);
-		data =  data + 192;
+		//tid = data[0]&0x07;
+		tid = data[0];
+		if(tid <= 7){
+			  data[0] = 0x47;	
+			  dvb_dmx_swfilter_packets(&(dev->adapter[tid].demux), data, 1);
+			  data =  data + 192;
+			}
+		else{
+			  while(1)
+			   {
+			    if(data[0] <= 7)
+			      {
+				 data = data + 192;
+				 if(data[0] <= 7){
+					data = data - 192;
+					break;
+				 }esle{
+				   data = data - 192;
+				   data++;
+				 }
+			      }
+			    else{
+			      data++;
+			    }
+			   }
+		    }
 	}
+	
 	spin_unlock(&dev->adap_lock);	
 }
 
@@ -257,7 +290,7 @@ int sg_dma_init(struct hm610_dev *dev)
 	for (i = 0; i < dev->info->adapters; i++) {	
 		adapter->dma.buf[0] = gDataBuffer;
 		adapter->dma.cnt = 0;
-		for (j = 1; j < SG_DMA_BUFFERS + 1; j++)
+		for (j = 1; j <   + 1; j++)
 			adapter->dma.buf[j] = adapter->dma.buf[j-1] + SG_DMA_BUF_SIZE;
 		
 		adapter->dma.seg_v = (struct sg_dma_tx_descriptor *)gBDBuffer ; 	
