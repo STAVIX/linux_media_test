@@ -252,13 +252,14 @@ static int xiic_busy(struct hm610_i2c *i2c)
 	int err = 1;
 	u32 sr;
 
-	sr = pci_read(HM610_I2C_BASE, HM610_SR_REG_OFFSET);
-	err = (sr & HM610_SR_BUS_BUSY_MASK) ? -EBUSY : 0;
+//sr = pci_read(HM610_I2C_BASE, HM610_SR_REG_OFFSET);
+//err = (sr & HM610_SR_BUS_BUSY_MASK) ? -EBUSY : 0;
 
 	while (err && tries--) {
-		msleep(1);
 		sr = pci_read(HM610_I2C_BASE, HM610_SR_REG_OFFSET);
-		err = (sr & HM610_SR_BUS_BUSY_MASK) ? -EBUSY : 0;	
+		err = (sr & HM610_SR_BUS_BUSY_MASK) ? -EBUSY : 0;
+		if(err)
+			msleep(1);
 	}
 	return err;
 }
@@ -373,9 +374,10 @@ static int xiic_xfer(struct i2c_adapter *i2c_adap, struct i2c_msg *msgs, int num
 	int err;
 	
 	err = xiic_busy(i2c);
- 	if (err)
+ 	if (err){
+		pr_err("xilinx i2c busy \n");
 		goto out; 
-
+	}
 	i2c->tx_msg = msgs;
 	i2c->nmsgs = num;
 	mutex_lock(&i2c->lock); 
@@ -385,12 +387,14 @@ static int xiic_xfer(struct i2c_adapter *i2c_adap, struct i2c_msg *msgs, int num
 	if (wait_event_timeout(i2c->wq, (i2c->state == STATE_ERROR) || 
 		(i2c->state == STATE_DONE), HZ)) { 
 		err = (i2c->state == STATE_DONE) ? num : -EIO;
+		if(err != num)
+			pr_err("xilinx i2c xfer undone \n");
 	} else {
 		i2c->tx_msg = NULL;
 		i2c->rx_msg = NULL;
 		i2c->nmsgs = 0;
 		err = -ETIMEDOUT;
-		pr_err("xiic xfer i2c read error 2\n");
+		pr_err("xilinx i2c timeout error \n");
 
 	}
 	
