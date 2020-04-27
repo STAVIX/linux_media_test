@@ -129,10 +129,11 @@ static void replace_tasklet_schedule(struct hm610_dev *dev)
 		if(tid <= 7){
 			data[0] = 0x47;	
 			dvb_dmx_swfilter_packets(&(dev->adapter[tid].demux), data, 1);
-			data =  data + 192;
 		}
+		data =  data + 192;
+		
 	}*/
-	
+//未经测试这个找同步程序
 	for(i = 0; i < TS_NUM; i++) {
 		//tid = data[0]&0x07;
 		tid = data[0];
