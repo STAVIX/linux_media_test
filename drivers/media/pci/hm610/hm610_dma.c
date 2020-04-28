@@ -103,7 +103,7 @@ static void replace_tasklet_schedule(struct hm610_dev *dev)
 	
 	u8* data;
 	u8 tid,k;
-	int i;
+	int i,j;
 	u32 cdesc;
 	spin_lock(&dev->adap_lock);	
 	
@@ -133,35 +133,35 @@ static void replace_tasklet_schedule(struct hm610_dev *dev)
 		data =  data + 192;
 		
 	}*/
-//未经测试这个找同步程序
-	for(i = 0; i < TS_NUM; i++) {
-		//tid = data[0]&0x07;
-		tid = data[0];
-		if(tid <= 7){
-			  data[0] = 0x47;	
-			  dvb_dmx_swfilter_packets(&(dev->adapter[tid].demux), data, 1);
-			  data =  data + 192;
-			}
-		else{
-			  while(1)
-			   {
-			    if(data[0] <= 7)
-			      {
-				 data = data + 192;
-				 if(data[0] <= 7){
-					data = data - 192;
-					break;
-				 }esle{
-				   data = data - 192;
-				   data++;
-				 }
-			      }
-			    else{
-			      data++;
-			    }
-			   }
-		    }
-	}
+//已经测试这个找同步程序
+        for(i = 0; i < TS_NUM; i++){
+                tid = data[0];
+                if(tid <= 0x07){
+                        data[0] = 0x47;
+			dvb_dmx_swfilter_packets(&(dev->adapter[tid].demux), data, 1);
+                        data =  data + 192;
+                        }
+                else{
+                        for(j = 0; j < 192; j++)
+                        {
+                                if(data[0] <= 0x07)
+                                {
+                                        data = data + 192;
+                                        if(data[0] <= 0x07){
+                                          data = data - 192;
+                                          i = i + 1;
+                                          break;
+                                        }else{
+                                          data = data - 192;
+                                          data++;
+                                        }
+                                }
+                                else{
+                                    data++;
+                                }
+                        }
+                }
+        }
 	
 	spin_unlock(&dev->adap_lock);	
 }
